@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Trisend Admin</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sidebar-w:240px;
+  --nav:#0f172a;
+  --nav-hover:#1e293b;
+  --accent:#6366f1;
+  --accent-dim:#4f46e5;
+  --bg:#f1f5f9;
+  --card:#ffffff;
+  --text:#1e293b;
+  --muted:#64748b;
+  --border:#e2e8f0;
+  --success:#10b981;
+  --warn:#f59e0b;
+  --danger:#ef4444;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.12);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* ─── Login ───────────────────────────────────────────────────────────────── */
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);z-index:1000}
+.login-box{background:#fff;border-radius:16px;padding:40px 36px;width:380px;max-width:90vw;box-shadow:var(--shadow-lg);text-align:center}
+.login-box .logo{font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-1px;margin-bottom:6px}
+.login-box .logo span{color:var(--accent)}
+.login-box p{color:var(--muted);margin-bottom:28px;font-size:13px}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 20px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);transition:all .2s}
+.btn-google:hover{background:#f8fafc;border-color:#c7d2fe;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.btn-google svg{width:20px;height:20px;flex-shrink:0}
+#login-error{color:var(--danger);font-size:13px;margin-top:14px;display:none}
+
+/* ─── App ─────────────────────────────────────────────────────────────────── */
+#app{display:none;min-height:100vh}
+
+/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--nav);display:flex;flex-direction:column;z-index:100}
+.sidebar-brand{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sidebar-brand .logo-text{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.sidebar-brand .logo-text span{color:var(--accent)}
+.sidebar-brand .badge{font-size:10px;background:var(--accent);color:#fff;padding:2px 7px;border-radius:20px;font-weight:600;margin-left:6px;vertical-align:middle;letter-spacing:.5px}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,.55);cursor:pointer;transition:all .15s;font-weight:500;font-size:13.5px;border-left:3px solid transparent}
+.nav-item:hover{background:var(--nav-hover);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(99,102,241,.15);color:#fff;border-left-color:var(--accent)}
+.nav-item svg{width:17px;height:17px;opacity:.7;flex-shrink:0}
+.nav-item.active svg,.nav-item:hover svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.admin-avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+.admin-info{flex:1;overflow:hidden}
+.admin-info .name{color:#fff;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-info .role{color:rgba(255,255,255,.4);font-size:11px}
+.btn-logout{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;padding:4px;border-radius:4px;transition:color .15s}
+.btn-logout:hover{color:var(--danger)}
+.btn-logout svg{width:16px;height:16px;display:block}
+
+/* ─── Main ────────────────────────────────────────────────────────────────── */
+.main{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.topbar-left h1{font-size:18px;font-weight:700;color:var(--text)}
+.topbar-left p{font-size:12px;color:var(--muted)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn-refresh{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .2s}
+.btn-refresh:hover{border-color:var(--accent);color:var(--accent)}
+.btn-refresh svg{width:14px;height:14px}
+.btn-refresh.spinning svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Content ─────────────────────────────────────────────────────────────── */
+.content{padding:24px 28px;flex:1}
+.section{display:none}
+.section.active{display:block}
+
+/* ─── Stats ───────────────────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.stat-card .label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.stat-card .value{font-size:28px;font-weight:800;color:var(--text);line-height:1}
+.stat-card .sub{font-size:12px;color:var(--muted)}
+.stat-card .icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.stat-card .icon svg{width:20px;height:20px}
+.icon-purple{background:#ede9fe;color:#7c3aed}
+.icon-green{background:#d1fae5;color:#059669}
+.icon-blue{background:#dbeafe;color:#2563eb}
+.icon-orange{background:#ffedd5;color:#ea580c}
+.icon-rose{background:#ffe4e6;color:#e11d48}
+.icon-cyan{background:#cffafe;color:#0891b2}
+.icon-indigo{background:#e0e7ff;color:#4338ca}
+
+/* ─── Section header ──────────────────────────────────────────────────────── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-header h2{font-size:16px;font-weight:700}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;min-width:220px}
+.search-box svg{width:14px;height:14px;color:var(--muted);flex-shrink:0}
+.search-box input{border:none;outline:none;font-size:13px;width:100%;background:transparent;color:var(--text)}
+.search-box input::placeholder{color:var(--muted)}
+
+/* ─── Table ───────────────────────────────────────────────────────────────── */
+.table-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#fafafa}
+.table-empty{text-align:center;padding:48px 16px;color:var(--muted);font-size:13px}
+.table-footer{padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+
+/* ─── Pills ───────────────────────────────────────────────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill-premium{background:#ede9fe;color:#6d28d9}
+.pill-free{background:#f1f5f9;color:#64748b}
+.pill-expired{background:#fee2e2;color:#dc2626}
+.pill-active{background:#d1fae5;color:#059669}
+.pill-warn{background:#fef3c7;color:#b45309}
+.pill-all{background:#dbeafe;color:#1d4ed8}
+
+/* ─── Cells ───────────────────────────────────────────────────────────────── */
+.url-cell{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent);font-family:monospace;font-size:12px}
+.code-cell{font-family:monospace;font-size:12px;background:#f1f5f9;padding:2px 7px;border-radius:4px;white-space:nowrap}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+.actions{display:flex;gap:6px;align-items:center}
+.btn{padding:6px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn svg{width:12px;height:12px}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-dim)}
+.btn-danger{background:#fee2e2;color:var(--danger)}
+.btn-danger:hover{background:#fecaca}
+.btn-success{background:#d1fae5;color:#059669}
+.btn-success:hover{background:#a7f3d0}
+.btn-warn{background:#fef3c7;color:#b45309}
+.btn-warn:hover{background:#fde68a}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ─── Modal ───────────────────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:#fff;border-radius:14px;padding:28px;width:420px;max-width:90vw;box-shadow:var(--shadow-lg);transform:scale(.96);transition:transform .2s}
+.modal-overlay.open .modal-box{transform:scale(1)}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal-box p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.modal-box .form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.modal-box label{font-size:12px;font-weight:600;color:var(--muted)}
+.modal-box input{border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;font-size:14px;outline:none;transition:border .15s}
+.modal-box input:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.btn-cancel{background:#f1f5f9;color:var(--text)}
+.btn-cancel:hover{background:#e2e8f0}
+
+/* ─── Broadcast Compose ───────────────────────────────────────────────────── */
+.bc-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:900px){.bc-grid{grid-template-columns:1fr}}
+.compose-card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.compose-card h3{font-size:15px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.form-group input,.form-group textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 13px;font-size:13px;outline:none;font-family:inherit;transition:border .15s;resize:vertical;color:var(--text)}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.form-group textarea{min-height:110px}
+
+/* target selector */
+.target-selector{display:flex;gap:8px;flex-wrap:wrap}
+.target-btn{
+  padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);
+  background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);
+  transition:all .15s;
+}
+.target-btn:hover{border-color:var(--accent);color:var(--accent)}
+.target-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.target-btn.active-all{background:#2563eb;border-color:#2563eb;color:#fff}
+.target-btn.active-premium{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.target-btn.active-free{background:#059669;border-color:#059669;color:#fff}
+
+/* preview */
+.bc-preview{
+  border:1.5px dashed var(--border);border-radius:10px;padding:16px;
+  margin:16px 0;background:#fafafa;
+}
+.bc-preview .preview-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.bc-preview .preview-banner{
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  border-radius:8px;padding:14px 16px;color:#fff;
+}
+.bc-preview .preview-banner.target-all{background:linear-gradient(135deg,#2563eb,#4f46e5)}
+.bc-preview .preview-banner.target-premium{background:linear-gradient(135deg,#7c3aed,#9333ea)}
+.bc-preview .preview-banner.target-free{background:linear-gradient(135deg,#059669,#10b981)}
+.bc-preview .preview-tag{font-size:10px;font-weight:700;opacity:.75;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.bc-preview .preview-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.bc-preview .preview-msg{font-size:12px;opacity:.85;line-height:1.5}
+
+/* broadcast history cards */
+.bc-history{display:flex;flex-direction:column;gap:10px}
+.bc-card{
+  background:var(--card);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow);border-left:4px solid var(--accent);
+}
+.bc-card.target-all{border-left-color:#2563eb}
+.bc-card.target-premium{border-left-color:#7c3aed}
+.bc-card.target-free{border-left-color:#059669}
+.bc-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.bc-card-title{font-size:14px;font-weight:700;color:var(--text)}
+.bc-card-meta{font-size:11px;color:var(--muted);margin-bottom:8px}
+.bc-card-msg{font-size:13px;color:var(--muted);line-height:1.5;white-space:pre-wrap;word-break:break-word}
+
+/* recipient count bubble */
+.sent-to{
+  display:inline-flex;align-items:center;gap:5px;
+  background:#f0fdf4;color:#166534;padding:6px 12px;border-radius:8px;
+  font-size:12px;font-weight:600;margin-top:14px;width:100%;justify-content:center;
+}
+
+/* ─── Toast ───────────────────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast-item{background:#1e293b;color:#fff;padding:11px 18px;border-radius:9px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);animation:slideUp .25s ease;max-width:320px;display:flex;align-items:center;gap:10px}
+.toast-item.success::before{content:'✓';color:var(--success);font-weight:800}
+.toast-item.error::before{content:'✕';color:var(--danger);font-weight:800}
+.toast-item.info::before{content:'·';color:#94a3b8;font-weight:800}
+@keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ─── Skeleton ────────────────────────────────────────────────────────────── */
+.skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;height:14px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">Tri<span>send</span></div>
+    <p>Admin Dashboard &nbsp;·&nbsp; Sign in to continue</p>
+    <button class="btn-google" id="btn-google-login">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Sign in with Google
+    </button>
+    <p id="login-error"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-text">Tri<span>send</span> <span class="badge">ADMIN</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-section="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-section="users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+        <span class="nav-badge" id="badge-users">—</span>
+      </div>
+      <div class="nav-item" data-section="links">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Short Links
+        <span class="nav-badge" id="badge-links">—</span>
+      </div>
+      <div class="nav-item" data-section="qrcodes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3"/><path d="M18 21h3"/><path d="M21 21v-1"/><path d="M14 16v1"/><path d="M14 21h1"/><path d="M17 18h1"/></svg>
+        QR Codes
+        <span class="nav-badge" id="badge-qr">—</span>
+      </div>
+      <div class="nav-item" data-section="biopages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6"/><path d="M9 12h6"/><path d="M9 15h4"/></svg>
+        Bio Pages
+        <span class="nav-badge" id="badge-bio">—</span>
+      </div>
+      <div class="nav-item" data-section="payments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+        Payments
+      </div>
+      <div class="nav-item" data-section="broadcasts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72c.13 1 .38 1.98.74 2.91a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.36 1.91.61 2.91.74A2 2 0 0 1 22 16.92z"/></svg>
+        Broadcasts
+        <span class="nav-badge" id="badge-broadcasts">—</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-avatar" id="admin-avatar">A</div>
+      <div class="admin-info">
+        <div class="name" id="admin-name">Admin</div>
+        <div class="role">Super Admin</div>
+      </div>
+      <button class="btn-logout" id="btn-logout" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="topbar-title">Overview</h1>
+        <p id="topbar-sub">Trisend platform stats</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-refresh" id="btn-refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <section class="section active" id="section-overview">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+          <div class="stat-card"><div class="skeleton" style="width:60%;margin-bottom:8px"></div><div class="skeleton" style="width:40%"></div></div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section class="section" id="section-users">
+        <div class="section-header">
+          <h2>All Users</h2>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-users" placeholder="Search by email or name…"/>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table><thead><tr><th>User</th><th>Plan</th><th>Expires</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="tbody-users"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="table-footer" id="footer-users"></div>
+        </div>
+      </section>
+
+      <!-- LINKS -->
+      <section class="section" id="section-links">
+        <div class="section-header">
+          <h2>Short Links</h2>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-links" placeholder="Search by code or URL…"/>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table><thead><tr><th>Code</th><th>Destination</th><th>Clicks</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="tbody-links"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="table-footer" id="footer-links"></div>
+        </div>
+      </section>
+
+      <!-- QR CODES -->
+      <section class="section" id="section-qrcodes">
+        <div class="section-header">
+          <h2>Dynamic QR Codes</h2>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-qr" placeholder="Search by code or URL…"/>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table><thead><tr><th>Code</th><th>Destination</th><th>Scans</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="tbody-qrcodes"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="table-footer" id="footer-qrcodes"></div>
+        </div>
+      </section>
+
+      <!-- BIO PAGES -->
+      <section class="section" id="section-biopages">
+        <div class="section-header">
+          <h2>Link-in-Bio Pages</h2>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-bio" placeholder="Search by username…"/>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table><thead><tr><th>Username</th><th>Title</th><th>Links</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="tbody-biopages"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="table-footer" id="footer-biopages"></div>
+        </div>
+      </section>
+
+      <!-- PAYMENTS -->
+      <section class="section" id="section-payments">
+        <div class="section-header">
+          <h2>Payment History</h2>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-payments" placeholder="Search by email or ref…"/>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table><thead><tr><th>Email</th><th>Paystack Ref</th><th>Source</th><th>Started</th><th>Expires</th></tr></thead>
+            <tbody id="tbody-payments"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="table-footer" id="footer-payments"></div>
+        </div>
+      </section>
+
+      <!-- BROADCASTS -->
+      <section class="section" id="section-broadcasts">
+        <div class="bc-grid">
+
+          <!-- Compose -->
+          <div class="compose-card">
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--accent)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72c.13 1 .38 1.98.74 2.91a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.36 1.91.61 2.91.74A2 2 0 0 1 22 16.92z"/></svg>
+              New Broadcast
+            </h3>
+
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" id="bc-title" placeholder="e.g. New Feature Alert 🎉" maxlength="80"/>
+            </div>
+
+            <div class="form-group">
+              <label>Message</label>
+              <textarea id="bc-message" placeholder="Write your message to users here…" maxlength="500"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Send to</label>
+              <div class="target-selector">
+                <button class="target-btn active-all" data-target="all">👥 All Users</button>
+                <button class="target-btn" data-target="premium">⭐ Premium Only</button>
+                <button class="target-btn" data-target="free">🆓 Free Only</button>
+              </div>
+            </div>
+
+            <!-- Live preview -->
+            <div class="bc-preview">
+              <div class="preview-label">Preview — what users will see</div>
+              <div class="preview-banner target-all" id="preview-banner">
+                <div class="preview-tag" id="preview-tag">📢 Message for all users</div>
+                <div class="preview-title" id="preview-title">Your title here</div>
+                <div class="preview-msg" id="preview-msg">Your message will appear here…</div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-send-broadcast" style="width:100%;padding:12px;font-size:14px;justify-content:center">
+              Send Broadcast
+            </button>
+            <div id="sent-feedback" style="display:none"></div>
+          </div>
+
+          <!-- History -->
+          <div>
+            <div class="section-header" style="margin-bottom:12px">
+              <h2>Sent Broadcasts</h2>
+            </div>
+            <div id="bc-history-list"><div class="table-card" style="padding:24px;text-align:center;color:var(--muted)">Loading…</div></div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-grant">
+  <div class="modal-box">
+    <h3>Grant Premium</h3>
+    <p id="modal-grant-desc">Grant premium access to this user.</p>
+    <div class="form-row">
+      <label>Duration (days)</label>
+      <input type="number" id="grant-days" value="30" min="1" max="3650"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="btn-grant-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-grant-confirm">Grant Premium</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-box">
+    <h3 id="modal-confirm-title">Are you sure?</h3>
+    <p id="modal-confirm-desc">This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="btn-confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="btn-confirm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/admin.js"></script>
+</body>
+</html>
